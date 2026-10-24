@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Sobe a API fora do Docker, com o debugger do VS Code (breakpoints funcionam).
+      // Usa o Postgres do container (localhost:5432), então deixe o "db" rodando.
+      "name": "API local (debug)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.api:app", "--port", "8011"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "justMyCode": true
+    },
+    {
+      // Roda os testes com breakpoint (pytest do arquivo aberto)
+      "name": "Testes (debug)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-q"],
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true
+    }
+  ]
+}

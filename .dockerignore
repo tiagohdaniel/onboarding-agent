@@ -1,0 +1,6 @@
+# O que NÃO entra na imagem no "COPY . ."
+.env
+.venv
+.git
+__pycache__/
+.pytest_cache/
