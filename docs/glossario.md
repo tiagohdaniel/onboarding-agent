@@ -14,9 +14,9 @@ Status no projeto: ✔️ já usamos · 🔜 vem numa próxima fase
 
 | Área | Termos |
 |---|---|
-| [LLM e API](#llm-e-api) | [Token](#token) · [Janela de contexto](#janela-de-contexto) · [max_tokens](#max_tokens) · [Mensagens system, human e ai](#mensagens-system-human-e-ai) · [Não determinismo](#não-determinismo) · [Prompt caching](#prompt-caching) · [Tool calling](#tool-calling) · [Provider e SDK](#provider-e-sdk) · [Lock-in](#lock-in) |
+| [LLM e API](#llm-e-api) | [Token](#token) · [Janela de contexto](#janela-de-contexto) · [max_tokens](#max_tokens) · [Mensagens system, human e ai](#mensagens-system-human-e-ai) · [Não determinismo](#não-determinismo) · [Prompt caching](#prompt-caching) · [Tool calling](#tool-calling) · [Provider e SDK](#provider-e-sdk) · [Lock-in](#lock-in) · [Thinking (raciocínio do modelo)](#thinking-raciocínio-do-modelo) |
 | [Prompt](#prompt) | [System prompt](#system-prompt) · [Few-shot](#few-shot) · [Alucinação](#alucinação) · [Vazamento de instrução](#vazamento-de-instrução) |
-| [Observabilidade](#observabilidade) | [Trace](#trace) · [Span e generation](#span-e-generation) · [Session](#session) · [Callback](#callback) · [OpenTelemetry](#opentelemetry) · [Envio em lote (flush)](#envio-em-lote-flush) · [Score](#score) |
+| [Observabilidade](#observabilidade) | [Trace](#trace) · [Span e generation](#span-e-generation) · [Session](#session) · [Callback](#callback) · [OpenTelemetry](#opentelemetry) · [Envio em lote (flush)](#envio-em-lote-flush) · [Score](#score) · [Latência e TTFT](#latência-e-ttft) |
 | [RAG e busca vetorial](#rag-e-busca-vetorial) | [RAG](#rag) · [Embedding](#embedding) · [Chunk e chunking](#chunk-e-chunking) · [Vector store](#vector-store) · [Similaridade de cosseno e distância L2](#similaridade-de-cosseno-e-distância-l2) · [Busca exata (kNN)](#busca-exata-knn) · [ANN](#ann) · [HNSW](#hnsw) · [IVFFlat](#ivfflat) · [Top-k](#top-k) · [Busca híbrida e BM25](#busca-híbrida-e-bm25) · [Metadado](#metadado) |
 | [Evals](#evals) | [Eval](#eval) · [Golden dataset](#golden-dataset) · [Precision@k](#precisionk) · [Recall@k](#recallk) · [LLM-as-judge](#llm-as-judge) · [Groundedness](#groundedness) · [Rubrica](#rubrica) · [Vieses do juiz](#vieses-do-juiz) |
 | [Python, API e infra](#python-api-e-infra) | [Lockfile e dependência transitiva](#lockfile-e-dependência-transitiva) · [Pydantic e validação](#pydantic-e-validação) · [Injeção de dependência](#injeção-de-dependência) · [Context manager (`with`)](#context-manager-with) · [Variável de ambiente](#variável-de-ambiente) · [Camadas e cache do Docker](#camadas-e-cache-do-docker) · [Volume](#volume) · [Healthcheck](#healthcheck) |
@@ -119,6 +119,18 @@ migrar dados).
 
 ---
 
+### Thinking (raciocínio do modelo)
+
+**O que é:** o modelo "pensa" antes de responder, gerando tokens de raciocínio que não fazem
+parte da resposta final. São cobrados como tokens de saída, mesmo quando a API não devolve o
+texto do raciocínio.
+
+**Exemplo:** é o rascunho de uma prova: o professor não lê, mas você gastou tempo (e aqui,
+dinheiro) escrevendo.
+
+**No projeto:** ✔️ descoberto no trace da Fase 2: o Haiku 5.5 raciocina por padrão e ~1/3
+dos tokens de saída era raciocínio invisível. Ver [D10](decisoes.md#d10--thinking-do-modelo).
+
 ## Prompt
 
 ### System prompt
@@ -218,6 +230,18 @@ ou do 👍/👎 do usuário.
 **No projeto:** 🔜 Fase 4 ([D9](decisoes.md#d9--onde-rodam-os-evals)).
 
 ---
+
+### Latência e TTFT
+
+**O que é:** **latência** é o tempo total da chamada (do envio ao último token). **TTFT**
+(*time to first token*) é quanto demora para chegar o primeiro token, e só existe com
+streaming.
+
+**Exemplo:** num chat, o TTFT é o que o usuário sente ("começou a escrever?"); a latência
+total importa para quem espera a resposta inteira, como uma API.
+
+**No projeto:** ✔️ o trace mostra latência de ~2,8s no `/chat`. O TTFT aparece vazio porque
+a resposta não é em streaming.
 
 ## RAG e busca vetorial
 

@@ -19,6 +19,7 @@ conceito ao lugar onde ele aparece no projeto.
 | [D7](#d7--system-prompt-padrão) | System prompt padrão | ✅ | v3 |
 | [D8](#d8--como-integrar-o-langfuse) | Integração do Langfuse | ✅ | `CallbackHandler` + filtro de spans |
 | [D9](#d9--onde-rodam-os-evals) | Onde rodam os evals | 🟡 | Proposta: no código + scores no Langfuse |
+| [D10](#d10--thinking-do-modelo) | Thinking do modelo | ✅ | Manter o padrão do modelo até ter evals |
 
 **Status:** ✅ decidido · 🟡 proposta (falta confirmar) · ⏳ pendente · 💡 anotação
 
@@ -435,6 +436,15 @@ a mesma chamada. O filtro deixa sair só os spans do Langfuse.
 Teste não pode depender de rede nem poluir o painel com chamadas do modelo falso. O
 `conftest.py` zera a chave antes do app ser importado.
 
+**4. "O custo no trace bate com o que você vê na resposta?"**
+
+Não batia, e só descobri abrindo o trace (2026-10-24). O output da generation tinha um bloco
+`thinking` vazio (só a `signature`) antes do texto: o Haiku 5.5 raciocina por padrão e não
+mostra o raciocínio, mas cobra por ele como token de saída. Medi com a mesma pergunta,
+2 rodadas cada: **~525 tokens de saída com thinking vs ~348 sem**, para respostas de tamanho
+parecido (~760 vs ~840 caracteres). Cerca de 1/3 da saída era raciocínio invisível. O
+Langfuse soma tudo em `output`, sem separar. Virou a [D10](#d10--thinking-do-modelo).
+
 ---
 
 ## D9 · Onde rodam os evals
@@ -491,3 +501,66 @@ favorecer respostas do mesmo modelo e é sensível à ordem quando compara duas.
 
 Recall@k mede a busca, mas não diz se a resposta usou o contexto certo. Groundedness
 precisa de alguém (ou algo) que leia a resposta.
+
+---
+
+## D10 · Thinking do modelo
+
+> ✅ Decidido em 2026-10-24
+
+**Contexto:** ao revisar o trace no Langfuse, vimos que o Haiku 5.5 gera um bloco de
+[thinking](glossario.md#thinking-raciocínio-do-modelo) por padrão. O texto do raciocínio vem
+vazio, mas os tokens são cobrados como saída. Medição (mesma pergunta, 2 rodadas cada):
+
+| Config | Tokens de saída | Caracteres da resposta |
+|---|---|---|
+| Padrão (thinking ligado) | 511 / 539 | 773 / 743 |
+| `thinking={"type": "disabled"}` | 349 / 348 | 829 / 846 |
+
+| Opção | Prós | Contras |
+|---|---|---|
+| Desligar no `/chat` | ~1/3 a menos de tokens de saída (o token mais caro); menos latência | Pode piorar perguntas que exigem raciocínio (ex.: o agent escolhendo tools na Fase 5) |
+| **Manter o padrão** | Melhor raciocínio, de graça em código | Custo escondido: a resposta parece curta, mas a conta não |
+| Ligar com orçamento explícito | Controle de quanto raciocina | Mais um parâmetro para calibrar sem métrica ainda |
+
+### ✅ Decisão
+
+- Manter o padrão do modelo (nenhum parâmetro `thinking` no `app/llm.py`).
+- Decidir com dado na Fase 4/6: rodar o dataset de evals com e sem thinking e comparar
+  qualidade (groundedness, acerto de tool) vs custo.
+
+### 💡 Porquê
+
+Hoje só temos o lado do custo medido. Desligar sem saber o efeito na qualidade seria trocar
+um palpite por outro; com os evals a escolha vira número. Em POC, o custo absoluto é
+irrelevante (US$ 0,0003 por chamada).
+
+### ⚖️ Tradeoff aceito
+
+- Pagamos ~1/3 a mais de tokens de saída sem saber se há ganho.
+- O comportamento depende do padrão do modelo: trocar o `LLM_MODEL` pode mudar o thinking
+  sem nenhuma mudança no nosso código.
+
+### 🔁 Quando rever
+
+- Na Fase 4, assim que houver dataset de evals: primeiro experimento com/sem thinking.
+- Se trocar o modelo no `.env`.
+- Antes de produção, onde o custo por chamada passa a importar.
+
+### 🎤 Frase de entrevista
+
+> "Abrindo o trace, vi que um terço dos tokens de saída era raciocínio que o usuário nem via.
+> Não desliguei no escuro: deixei para decidir com o eval, comparando qualidade e custo."
+
+### ❓ Follow-ups prováveis
+
+**1. "Por que o raciocínio vem vazio se é cobrado?"**
+
+O modelo raciocina, mas a API devolve só a `signature` (prova criptográfica de que o
+raciocínio existiu e não foi alterado), não o texto. A assinatura serve para mandar o bloco
+de volta em conversas com tools sem quebrar a continuidade.
+
+**2. "Como você descobriria isso sem o Langfuse?"**
+
+Comparando `usage.output_tokens` com o tamanho do texto: ~525 tokens para ~760 caracteres em
+português é desproporcional (a mesma resposta sem thinking dá ~348).

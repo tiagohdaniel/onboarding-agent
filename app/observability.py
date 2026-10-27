@@ -21,5 +21,6 @@ Langfuse(
 
 def get_langfuse_handler() -> CallbackHandler:
     """Callback do LangChain: a cada chamada do LLM, ele registra um trace no Langfuse
-    (prompt, resposta, tokens, custo e latência), sem mudar a chamada em si."""
+    (prompt, resposta, modelo, tokens e latência), sem mudar a chamada em si.
+    O custo não sai daqui: o servidor do Langfuse calcula com modelo + tokens."""
     return CallbackHandler()

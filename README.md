@@ -67,10 +67,16 @@ revisit** it, in [`docs/decisoes.md`](docs/decisoes.md) (Portuguese).
 | D4 | Langfuse Cloud | Full traces stored outside our infra; a few seconds of delay to show up |
 | D7 | System prompt v3 | Input prompt 2.3× larger; fixed format feels less natural in casual chat |
 | D8 | Langfuse via `CallbackHandler` + span filter | Drops non-Langfuse spans; anything outside LangChain isn't traced |
+| D10 | Keep the model's default thinking until evals exist | Paying ~1/3 more output tokens without knowing the quality gain |
 
 **Things I saw break:** the first Langfuse integration **doubled the reported cost** — both the
 LangChain callback and the Anthropic SDK instrumentation were emitting a generation for the
 same call. Fixed by filtering the SDK span (D8).
+
+Reviewing a trace also showed that **~1/3 of output tokens were hidden reasoning**: the model
+thinks by default and returns an empty `thinking` block, but bills it as output (~525 output
+tokens with thinking vs ~348 without, for answers of similar length). Kept as is for now, to be
+decided with evals comparing quality vs. cost (D10).
 
 ## Evaluation
 
@@ -118,7 +124,7 @@ The LLM is mocked in tests, so they don't depend on an external API or cost toke
 
 - [x] Phase 0 — Setup, Docker, `/health`
 - [x] Phase 1 — LLM call and prompt engineering
-- [ ] Phase 2 — Observability (Langfuse) *(integrated, trace review pending)*
+- [x] Phase 2 — Observability (Langfuse)
 - [ ] Phase 3 — RAG with pgvector
 - [ ] Phase 4 — Evals v1
 - [ ] Phase 5 — Agent with LangGraph

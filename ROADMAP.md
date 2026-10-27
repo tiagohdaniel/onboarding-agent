@@ -60,7 +60,7 @@ Teoria de apoio: `p1-production/observabilidade/`
 
 - [x] Criar conta/projeto no Langfuse Cloud e pôr as chaves no `.env`
 - [x] Integrar o Langfuse (callback handler do LangChain)
-- [ ] Ver no painel: prompt, resposta, tokens, custo, latência
+- [x] Ver no painel: prompt, resposta, tokens, custo, latência
 - [x] Adicionar `session_id`/`user_id` nos traces
 
 **Pronto quando:** você abre um trace e explica cada campo. Entra cedo porque
@@ -93,6 +93,7 @@ Teoria de apoio: `p0-retrieval-data/evals/` (e fechar o `eval_mini.py`)
 - [ ] Enviar as notas para o Langfuse via SDK (scores + Datasets/Experiments) e comparar versões no painel (D9)
 - [ ] Experimento: ligar o LLM-as-judge gerenciado do Langfuse e comparar com o nosso juiz (D9)
 - [ ] Confirmar a D9 em `docs/decisoes.md` com o que aprendeu
+- [ ] Experimento D10: rodar os evals com e sem thinking e comparar qualidade vs custo
 
 **Pronto quando:** você consegue dizer "mudei X, a métrica Y foi de A pra B".
 
@@ -167,3 +168,4 @@ Teoria de apoio: `p1-production/` (docker-cicd, seguranca-llm, production-backen
 | 2026-10-22 | Fase 0 fechada: compose (api + pgvector), `/health` 200/503, 2 testes passando |
 | 2026-10-22 | Fase 1 fechada: `/chat` com Claude via LangChain, comparação de 3 prompts → v3 (D7) |
 | 2026-10-23 | Fase 2 integrada: Langfuse via CallbackHandler, `session_id`/`user_id`, filtro contra span duplicado do SDK da Anthropic. Falta: abrir um trace e explicar cada campo |
+| 2026-10-24 | Fase 2 fechada: trace revisado campo a campo; achado do thinking invisível (~1/3 dos tokens de saída) registrado na D10 |
